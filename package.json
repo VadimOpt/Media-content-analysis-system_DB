@@ -3,13 +3,13 @@
   "version": "2.1.0",
   "main": "index.js",
   "description": "Databases course work template",
-  "repository": "https://github.com/Rembqq/Media-content-analysis-system_DB",
+  "repository": "https://github.com/VadimOpt/Media-content-analysis-system_DB",
   "author": "Nikita Volkovskyi <nikitavolkovskyi@gmail.com>",
   "license": "ECL 2.0",
   "scripts": {
     "docs:dev": "npx vuepress dev docs",
     "docs:build": "npx vuepress build docs",
-    "publish": "publish.sh"
+    "publish": "sh publish.sh"
   },
   "dependencies": {
     "@vuepress/plugin-back-to-top": "^1.7.1",

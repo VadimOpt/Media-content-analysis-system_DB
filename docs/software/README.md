@@ -161,226 +161,140 @@ COMMIT;
 ```
 
 ## RESTfull сервіс для управління даними
-## Model
-### Role
-```java
-package com.example.restapi.model;
+## Js
+### App.js
+```javascript
+const express = require('express');
+const mysql = require('mysql2');
 
-import jakarta.persistence.*;
+const app = express();
+app.use(express.json());
+const port = 3000;
 
-@Entity
-@Table(name  = "Role")
-public class Role {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
-    private String name;
-    private String description;
-    public Role(String name, String description) {
-        this.name = name;
-        this.description = description;
-    }
-    public Role() {}
-    public Integer getId() {
-        return id;
-    }
+const pool = mysql.createPool({
+    host: 'localhost',
+    user: 'root',
+    password: 'optimat2016',
+    database: 'mcanalyzer',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+});
 
-    public String getName() {
-        return name;
-    }
-    public void setName(String name) {
-        this.name = name;
-    }
-    public String getDescription() {
-        return description;
-    }
-    public void setDescription(String description) {
-        this.description = description;
-    }
-}
-```
-## Repository
-### MySqlRepository
-```java
-package com.example.restapi.repo;
+app.use(express.json());
 
-import com.example.restapi.model.Role;
-import org.springframework.data.jpa.repository.JpaRepository;
-
-public interface MySqlRepository extends JpaRepository<Role, Integer> { }
-```
-## Main Class for Spring Boot Application Launch
-```java
-package com.example.restapi;
-
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-@SpringBootApplication
-public class RestApiApplication {
-
-    public static void main(String[] args) {
-        SpringApplication.run(RestApiApplication.class, args);
-    }
-
-}
-```
-## Controller
-### RoleController
-```java
-package com.example.restapi.controller;
-
-import com.example.restapi.model.Role;
-import com.example.restapi.repo.MySqlRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.datasource.AbstractDriverBasedDataSource;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-@RestController
-public class RoleController {
-
-    @Autowired
-    MySqlRepository mySqlRepository;
-
-    // GET
-    @GetMapping("/get-all-roles")
-    public List<Role> getAllRoles() {
-        return mySqlRepository.findAll();
-    }
-
-    @GetMapping("/get-role/{id}")
-    public Role getRole(@PathVariable("id") Integer id) {
-        return mySqlRepository.findById(id).get();
-    }
-
-    // DELETE
-    @DeleteMapping("/remove/{id}")
-    public boolean deleteRow(@PathVariable("id") Integer id) {
-        if(!mySqlRepository.findById(id).equals(Optional.empty())) {
-            mySqlRepository.deleteById(id);
-            return true;
+// Отримання всіх користувачів
+app.get('/users', (req, res) => {
+    pool.query('SELECT * FROM User', (err, results) => {
+        if (err) {
+            return res.status(500).json({ message: err.message });
         }
-        return false;
-    }
+        res.json(results);
+    });
+});
 
-    // PUT
-    @PutMapping("/update/{id}")
-    public Role updateRole(@PathVariable("id") Integer id,
-                           @RequestBody Map<String, String> body)
-    {
-        Role current  = mySqlRepository.findById(id).get();
-        current.setName(body.get("name"));
-        current.setDescription(body.get("description"));
-        mySqlRepository.save(current);
-        return current;
-    }
+app.get('/users/:id', (req, res) => {
+    const userId = req.params.id;
+    pool.query('SELECT * FROM User WHERE id = ?', [userId], (err, results) => {
+        if (err) {
+            return res.status(500).json({ message: err.message });
+        }
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.json(results[0]);
+    });
+});
 
-    // POST
-    @PostMapping("/add")
-    public Role create(@RequestBody Map<String, String> body)
-    {
-        String name = body.get("name");
-        String description = body.get("description");
-        Role newRole = new Role(name, description);
+app.post('/users', (req, res) => {
+    const { password, nickname, email, roleId } = req.body;
+    const query = 'INSERT INTO User (password, nickname, email, Role_id) VALUES (?, ?, ?, ?)';
+    pool.query(query, [password, nickname, email, roleId], (err, results) => {
+        if (err) {
+            return res.status(500).json({ message: err.message });
+        }
+        res.status(201).json({ message: 'User created', userId: results.insertId });
+    });
+});
 
-        return mySqlRepository.save(newRole);
-    }
+app.delete('/users/:id', (req, res) => {
+    const userId = req.params.id;
+    const query = 'DELETE FROM User WHERE id = ?';
+    pool.query(query, [userId], (err, results) => {
+        if (err) {
+            return res.status(500).json({ message: err.message });
+        }
+        if (results.affectedRows === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.json({ message: 'User deleted' });
+    });
+});
 
-}
-```
-## Error Handlers
-### ErrorResponse
-```java
-package com.example.restapi.controller.errors;
+app.get('/roles', (req, res) => {
+    pool.query('SELECT * FROM Role', (err, results) => {
+        if (err) {
+            return res.status(500).json({ message: err.message });
+        }
+        res.json(results);
+    });
+});
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import org.springframework.http.HttpStatus;
+app.put('/users/:userId/role', (req, res) => {
+    const userId = req.params.userId;
+    const { roleId } = req.body; // Нова роль передається в тілі запиту
 
-import java.time.LocalDateTime;
+    const query = 'UPDATE User SET Role_id = ? WHERE id = ?';
+    pool.query(query, [roleId, userId], (err, results) => {
+        if (err) {
+            return res.status(500).json({ message: err.message });
+        }
+        if (results.affectedRows === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.json({ message: 'User role updated' });
+    });
+});
 
-public class ErrorResponse {
-    private HttpStatus status;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd hh:mm:ss")
-    private LocalDateTime timeStamp;
-    private String message;
 
-    public ErrorResponse(HttpStatus status) {
-        this.status = status;
-    }
+app.get('/mentionreports', (req, res) => {
+    const query = 'SELECT * FROM MentionReport';
+    pool.query(query, (err, results) => {
+        if (err) {
+            return res.status(500).json({ message: err.message });
+        }
+        res.json(results);
+    });
+});
 
-    public ErrorResponse(HttpStatus status, String message)
-    {
-        this();
-        this.status = status;
-        this.message = message;
-    }
+app.delete('/mentionreports/:id', (req, res) => {
+    const reportId = req.params.id;
+    const query = 'DELETE FROM MentionReport WHERE id = ?';
+    pool.query(query, [reportId], (err, results) => {
+        if (err) {
+            return res.status(500).json({ message: err.message });
+        }
+        if (results.affectedRows === 0) {
+            return res.status(404).json({ message: 'MentionReport not found' });
+        }
+        res.json({ message: 'MentionReport deleted' });
+    });
+});
 
-    public ErrorResponse()
-    {
-        timeStamp = LocalDateTime.now();
-    }
+app.post('/mentionreports', (req, res) => {
+    const { description, creationDate, title, userId } = req.body;
+    const query = 'INSERT INTO MentionReport (description, creationDate, title, User_id) VALUES (?, ?, ?, ?)';
+    pool.query(query, [description, creationDate, title, userId], (err, results) => {
+        if (err) {
+            return res.status(500).json({ message: err.message });
+        }
+        res.status(201).json({ message: 'MentionReport created', reportId: results.insertId });
+    });
+});
 
-    public ErrorResponse(HttpStatus status, LocalDateTime timeStamp, String message)
-    {
-        this.status = status;
-        this.timeStamp = timeStamp;
-        this.message = message;
-    }
 
-    public void setMessage(String message) {
-        this.message = message;
-    }
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+});
 
-    public HttpStatus getStatus() {
-        return status;
-    }
-
-}
-```
-### RestExceptionHandler
-```java
-package com.example.restapi.controller.errors;
-
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.servlet.HttpServletBean;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
-
-import java.sql.SQLIntegrityConstraintViolationException;
-import java.util.NoSuchElementException;
-
-@Order(Ordered.HIGHEST_PRECEDENCE)
-@ControllerAdvice
-public class RestExceptionHandler extends ResponseEntityExceptionHandler {
-
-    @ExceptionHandler(SQLIntegrityConstraintViolationException.class)
-    public ResponseEntity<Object> handleSqlIntegrityException(HttpServletRequest req, SQLIntegrityConstraintViolationException e) {
-
-        String error = "Unable to submit post: " + e.getMessage();
-        return buildResponseEntity(new ErrorResponse(HttpStatus.BAD_REQUEST, error));
-    }
-
-    @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<Object> handleNoSuchElementException(HttpServletRequest req, NoSuchElementException e)
-    {
-        ErrorResponse response = new ErrorResponse(HttpStatus.NOT_FOUND);
-        response.setMessage("The row for role doesn't exist " + req.getRequestURI());
-        return buildResponseEntity(response);
-    }
-
-    private ResponseEntity<Object> buildResponseEntity(ErrorResponse errorResponse)
-    {
-        return new ResponseEntity<Object>(errorResponse, errorResponse.getStatus());
-    }
-
-}
 ```

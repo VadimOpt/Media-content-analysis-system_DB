@@ -2,34 +2,36 @@
 
 Для тестування системи використовувся Postman
 
-## Role
+## User
 
-### Get All
+### Get All Users
 <p>
-    <img src="./images/get-all.png">
+    <img src="./images/getUsers.png">
 </p>
 
-### Post
+### Get All By Id
+
 <p>
-    <img src="./images/post.png">
+    <img src="./images/getUserById.png">
 </p>
 
-### Get/{id}
+### Create User
+
 <p>
-    <img src="./images/get-id.png">
+    <img src="./images/createUser.png">
 </p>
 
-###  Put
+### Delete User
 <p>
-    <img src="./images/put.png">
+    <img src="./images/deleteUser.png">
 </p>
 
-### Delete
+### Change Role
 <p>
-    <img src="./images/remove.png">
+    <img src="./images/changeRole.png">
 </p>
 
-### Get All(result)
+### Error
 <p>
-    <img src="./images/get-all_2.png">
+    <img src="./images/error.png">
 </p>

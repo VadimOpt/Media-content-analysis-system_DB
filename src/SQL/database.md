@@ -151,3 +151,4 @@ INSERT INTO `mcanalyzer`.`Role` (`id`, `name`, `description`) VALUES (2, 'Editor
 INSERT INTO `mcanalyzer`.`Role` (`id`, `name`, `description`) VALUES (3, 'Admin', 'Can do the same as other, can give roles and can block users.');
 
 COMMIT;
+

@@ -1,9 +1,9 @@
 const mysql = require('mysql2');
 
 const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'optimat2016',
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
     database: 'mcanalyzer',
     waitForConnections: true,
     connectionLimit: 10,
@@ -11,12 +11,8 @@ const connection = mysql.createConnection({
 });
 
 connection.connect(error => {
-    if (error) {
-        console.error('Помилка підключення до бази даних: ' + error.stack);
-        return;
-    }
-
-    console.log('Підключено до бази даних з ID ' + connection.threadId);
+    if (error) throw error;
+    console.log('Підключено до бази даних!');
 });
 
 module.exports = connection;

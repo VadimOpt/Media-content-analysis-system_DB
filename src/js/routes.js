@@ -131,3 +131,4 @@ const getMainPage = (app) => {
 }
 
 module.exports = { setupUserRoutes, setupRoleRoutes, getMainPage, setupMentionsReportRoutes };
+//
